@@ -76,6 +76,8 @@ int main(int argc, char *argv[])
   double minTime = 0;
   double maxTime = 0;
   int numParticles;
+  vector<vector<Planet<double> > > allPlanets;
+  allPlanets.resize(1);
   if(argc > 1)
     numParticles = atoi(argv[1]);
   else
@@ -119,7 +121,7 @@ int main(int argc, char *argv[])
       double mass = massGen(generator);
       
       Planet<double> tempPlanet(x, y, z, mass, maxDepth);
-
+      allPlanets[0].push_back(tempPlanet);
       planets.push_back(tempPlanet);
     }
 
@@ -129,32 +131,32 @@ int main(int argc, char *argv[])
   #ifndef __SILENT_MODE__
   {
     cout << "Before Sorting, is sorted: " << boolalpha 
-	 << seq::test::isSorted(planets) << endl;
-    cout << "Before remove: " << planets.size() << endl;
+	 << seq::test::isSorted(allPlanets[0]) << endl;
+    cout << "Before remove: " << allPlanets[0].size() << endl;
 
     cout << "Sorting..." << endl;
   }
   #endif
   start = chrono::system_clock::now();
 
-  MSD_Sort_rd(planets, 0, maxDepth, MAX_PER_OCT);
+  MSD_Sort_rd(allPlanets[0], 0, maxDepth, MAX_PER_OCT);
   //SFC::seqSort::SFC_3D_msd_sort_rd(&(*(planets.begin())), planets.size(), 0, maxDepth, maxDepth);
   #ifndef __SILENT_MODE__
   {
     cout << "\tFinished Initial Sorting" << endl;
  
-    cout << "After remove: " << planets.size() << endl;
+    cout << "After remove: " << allPlanets[0].size() << endl;
 
     cout << "After Sorting, is sorted: " << boolalpha 
-	 << seq::test::isSorted(planets) << endl;
+	 << seq::test::isSorted(allPlanets[0]) << endl;
 
     cout << "Finished Sorting Planets" << endl;
   
   // Build the octants based on sorted
   ot::TreeNode tempOctant;
-  for(int i = 0; i < planets.size(); ++i)
+  for(int i = 0; i < allPlanets[0].size(); ++i)
     {
-      tempOctant = planets[i].Octant();
+      tempOctant = allPlanets[0][i].Octant();
       octants.push_back(tempOctant);
     }
 
@@ -183,37 +185,65 @@ int main(int argc, char *argv[])
   string output;
   int level = maxDepth;
   int itr = 0;
+  planets = allPlanets[0];
   do
     {
+      allPlanets.resize(allPlanets.size() + 1);
       --level;
-      //output = basename;
-      //output.append(to_string(level));
-      CoarsenParticles(planets, coarsenPlanets);//, coarseTemp);
+      output = basename;
+      output.append(to_string(level));
+      //CoarsenParticles(planets, coarsenPlanets);//, coarseTemp);
+      CoarsenParticles(allPlanets[itr], allPlanets[itr+1]);
       //MSD_Sort_rd(coarsenPlanets, 0, maxDepth);
-      MSD_Sort(coarsenPlanets, level);
+      //MSD_Sort(coarsenPlanets, maxDepth);
+      MSD_Sort(allPlanets[itr+1], maxDepth);
       //SFC::seqSort::SFC_3D_msd_sort_rd(&(*(coarsenPlanets.begin())), coarsenPlanets.size(), 0, maxDepth, maxDepth);
-      /*
+      
       octants.clear();
-      for(int i = 0; i < coarsenPlanets.size(); ++i)
+      for(int i = 0; i < allPlanets[itr+1].size(); ++i)
 	{
-	  octants.push_back(coarsenPlanets[i].Octant());
+	  //cout << "i: " << i << '\t' << allPlanets[itr+1][i].Octant() << endl;
+	  octants.push_back(allPlanets[itr+1][i].Octant());
+	  //octants.push_back(coarsenPlanets[i].Octant());
 	}
       
       treeNodesTovtk(octants, node_id, output.c_str());
-      */
+      
       // Checks Coarsening
-      //cout << "Coarsened: " << boolalpha << CheckCoarsening(planets, coarsenPlanets) << endl;
+      //cout << "Coarsened: " << boolalpha << CheckCoarsening(allPlanets[itr], allPlanets[itr+1]) << endl;
+      
+      cout << "Level " << level << ": " << allPlanets[itr+1].size() << endl;
+      
+      ++itr;
+    }while(level > 2);//allPlanets[allPlanets.size()-1].size() > MAX_COARSEN);
+  
+  cout << "Total Levels: " << allPlanets.size() << endl;
 
-
-      planets = coarsenPlanets;
-      coarsenPlanets.clear();
-
-      //++itr;
-    }while(planets.size() > MAX_COARSEN);
+  cout << "Last level: " << allPlanets[allPlanets.size()-1].size() << endl;
   
   end = chrono::system_clock::now();
   elapsed_seconds = end - start;
   cout << "Time: " << elapsed_seconds.count() << " seconds" << endl;
+
+
+
+  // For the down sweep
+  Planet<double> current = allPlanets[0][500];
+  ot::TreeNode rootOct(0, 0, 0, 0, dim, maxDepth);
+  vector<ot::TreeNode> currOct;
+  currOct.push_back(current.Octant(maxDepth - 2));
+  vector<Planet<double> > accumulate;
+  vector<ot::TreeNode> neighbors = (current.Octant(2)).getAllNeighbours();
+  neighbors.erase(remove(neighbors.begin(), neighbors.end(), rootOct), neighbors.end());
+  sort(neighbors.begin(), neighbors.end());
+  ot::TreeNode minLocalOct = neighbors.front();
+  ot::TreeNode maxLocalOct = neighbors.back();
+  treeNodesTovtk(neighbors, node_id, "local");
+  treeNodesTovtk(currOct, node_id, "current");
+  cout << minLocalOct << '\t' << maxLocalOct << endl;
+  int prevMinIndex = 0;
+  int prevMaxIndex = 0;
+  auto currSearch = lower_bound(allPlanets[0].begin(), allPlanets[0].end(), current.Octant());
   /*
   ot::TreeNode equalCheck;
   for(int i = 0; i < coarsenPlanets.size(); ++i)
@@ -406,8 +436,8 @@ void CoarsenParticles(vector<Planet<T> > &in, vector<Planet<T> > &out)//, vector
   unsigned int depth = ((*in.begin()).GetDepth()) - 1;
   ot::TreeNode prev = ((*(in.begin())).GetOctant().getAncestor(depth));
   ot::TreeNode curr;
-  auto itr = in.begin();
-  //planets.push_back(*in.begin());
+  auto itr = in.begin() + 1;
+  planets.push_back(*in.begin());
 
   while(itr != in.end())
     {

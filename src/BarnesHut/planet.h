@@ -30,6 +30,7 @@ class Planet
   bool operator==(const Planet<T> &p2) const;
   bool operator<=(const Planet<T> &p2) const;
   bool operator!=(const Planet<T> &p2) const;
+  bool operator<(const ot::TreeNode &oct) const;
   Planet<T> &operator=(const Planet<T> &rhs);
 
   Vector<T> GetPos() const;
@@ -51,6 +52,7 @@ class Planet
   T GetMass() const;
   ot::TreeNode GetOctant() const;
   ot::TreeNode Octant() const;
+  ot::TreeNode Octant(const unsigned int &level) const;
 
   void SetPos(Vector<T> &rhs);
   void SetPos(T &x, T &y, T &z);
@@ -258,6 +260,14 @@ bool Planet<T>::operator!=(const Planet<T> &p2) const
 }
 
 template <typename T>
+bool Planet<T>::operator<(const ot::TreeNode &oct) const
+{
+  ot::TreeNode current = Octant();
+  
+  return current < oct;
+}
+
+template <typename T>
 Planet<T> &Planet<T>::operator=(const Planet<T> &rhs)
 {
   Vector<T> tempVec = rhs.GetPos();
@@ -383,6 +393,13 @@ ot::TreeNode Planet<T>::Octant() const
   ot::TreeNode octant(x, y, z, depth, 3, maxDepth);
   return octant;
   */
+}
+
+template <typename T>
+ot::TreeNode Planet<T>::Octant(const unsigned int &level) const
+{
+  ot::TreeNode oct = GetOctant();
+  return oct.getAncestor(level);
 }
 
 template <typename T>
