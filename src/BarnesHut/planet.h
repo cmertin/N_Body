@@ -31,6 +31,7 @@ class Planet
   bool operator<=(const Planet<T> &p2) const;
   bool operator!=(const Planet<T> &p2) const;
   bool operator<(const ot::TreeNode &oct) const;
+  bool operator>(const ot::TreeNode &oct) const;
   Planet<T> &operator=(const Planet<T> &rhs);
 
   Vector<T> GetPos() const;
@@ -265,6 +266,14 @@ bool Planet<T>::operator<(const ot::TreeNode &oct) const
   ot::TreeNode current = Octant();
   
   return current < oct;
+}
+
+template <typename T>
+bool Planet<T>::operator>(const ot::TreeNode &oct) const
+{
+  ot::TreeNode current = Octant();
+  
+  return oct < current;
 }
 
 template <typename T>
