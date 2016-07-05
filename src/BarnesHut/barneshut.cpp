@@ -164,7 +164,7 @@ int main(int argc, char *argv[])
 
   cout << "Finished Building Octants" << endl;
 
-  treeNodesTovtk(octants, node_id, "finest_octants");
+  //treeNodesTovtk(octants, node_id, "finest_octants");
   }
   #endif
   //temp.insert(temp.end(), octants.begin(), octants.begin() + 10);
@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
       //MSD_Sort(coarsenPlanets, maxDepth);
       MSD_Sort(allPlanets[itr+1], maxDepth);
       //SFC::seqSort::SFC_3D_msd_sort_rd(&(*(coarsenPlanets.begin())), coarsenPlanets.size(), 0, maxDepth, maxDepth);
-      
+      /*
       octants.clear();
       for(int i = 0; i < allPlanets[itr+1].size(); ++i)
 	{
@@ -211,165 +211,183 @@ int main(int argc, char *argv[])
 	}
       
       treeNodesTovtk(octants, node_id, output.c_str());
-      
+      */
       // Checks Coarsening
       //cout << "Coarsened: " << boolalpha << CheckCoarsening(allPlanets[itr], allPlanets[itr+1]) << endl;
       
-      cout << "Level " << level << ": " << allPlanets[itr+1].size() << endl;
+      //cout << "Level " << level << ": " << allPlanets[itr+1].size() << endl;
       size = allPlanets[itr+1].size();
       ++itr;
     }while(size > MAX_COARSEN);
   
-  cout << "Total Levels: " << allPlanets.size() << endl;
+  //cout << "Total Levels: " << allPlanets.size() << endl;
 
-  cout << "Last level: " << allPlanets[allPlanets.size()-1].size() << endl;
+  //cout << "Last level: " << allPlanets[allPlanets.size()-1].size() << endl;
   
   end = chrono::system_clock::now();
   elapsed_seconds = end - start;
-  cout << "Time: " << elapsed_seconds.count() << " seconds" << endl;
+  cout << "Upsweep Time: " << elapsed_seconds.count() << " seconds" << endl;
 
 
 
   // For the down sweep
   //level = 2;
-  Planet<double> current = allPlanets[0][500];
-  ot::TreeNode rootOct(0, 0, 0, 0, dim, maxDepth);
-  vector<ot::TreeNode> currOct;
-  currOct.push_back(current.Octant(maxDepth));
-  vector<Planet<double> > accumulate;
-  vector<ot::TreeNode> lower;
-  vector<ot::TreeNode> upper;
-  vector<ot::TreeNode> oldNeighbors = (current.Octant(level)).getAllNeighbours();
-  vector<ot::TreeNode> neighbors;
-  oldNeighbors.push_back(current.Octant(level));
-  sort(oldNeighbors.begin(), oldNeighbors.end());
-  //for(int i = 0; i < neighbors.size(); ++i)
-  //cout << "i: " << i << '\t' << neighbors[i] << endl;
-  oldNeighbors.erase(remove(oldNeighbors.begin(), oldNeighbors.end(), rootOct), oldNeighbors.end());
-  ot::TreeNode minLocalOct = oldNeighbors.front();
-  ot::TreeNode maxLocalOct = oldNeighbors.back();
-  treeNodesTovtk(oldNeighbors, node_id, "local");
-  treeNodesTovtk(currOct, node_id, "current");
-  //cout << minLocalOct << '\t' << maxLocalOct << endl;
-  int prevMinIndex = 0;
-  int prevMaxIndex = 0;
-  ot::TreeNode minParent;
-  ot::TreeNode maxParent;
-
-  auto lowerBound = lower_bound((allPlanets.back()).begin(), (allPlanets.back()).end(), minLocalOct);
-  auto upperBound = upper_bound((allPlanets.back()).begin(), (allPlanets.back()).end(), maxLocalOct);
-
-  minParent = (*(lowerBound - 1)).Octant();
-  maxParent = (*upperBound).Octant();
-
-  for(auto i = (allPlanets.back()).begin(); i < lowerBound; ++i)
-    accumulate.push_back(*i);
-
-  for(auto i = upperBound; i < (allPlanets.back()).end(); ++i)
-    accumulate.push_back(*i);
-  
-  auto allItr = lowerBound;
-  auto localItr = oldNeighbors.begin();
-
-  while(allItr != upperBound)
+  unsigned int maxLevel = level;
+  start = chrono::system_clock::now();
+  for(int body = 0; body < allPlanets[0].size(); ++body)
     {
-      if(*localItr == (*allItr).Octant())
-	{
-	  ++localItr;
-	  ++allItr;
-	}
-      else
-	{
-	  accumulate.push_back(*allItr);
-	  ++allItr;
-	}
-    }
+      level = maxLevel;
+      Planet<double> current = allPlanets[0][body];
+      ot::TreeNode rootOct(0, 0, 0, 0, dim, maxDepth);
+      vector<ot::TreeNode> currOct;
+      currOct.push_back(current.Octant(maxDepth));
+      vector<Planet<double> > accumulate;
+      vector<ot::TreeNode> lower;
+      vector<ot::TreeNode> upper;
+      vector<ot::TreeNode> oldNeighbors = (current.Octant(level)).getAllNeighbours();
+      vector<ot::TreeNode> neighbors;
 
-  for(int i = 0; i < accumulate.size(); ++i)
-    upper.push_back(accumulate[i].Octant());
-  
 
-  treeNodesTovtk(upper, node_id, "1st_level");
-  
-  vector<ot::TreeNode> olderNeighbors = oldNeighbors;
+      //cout << "i = " << body << '\t' << allPlanets[0][body] << '\t' <<current.Octant(maxDepth) << '\t' <<  current.Octant(level) << endl;
 
-  /////////////////////////////////////////////////////////////////
-  cout << "level " << level << ": " << accumulate.size() << endl;
 
-  for(int i = allPlanets.size()-2; i >= 0; --i)
-    {
-      ++level;
-      minParent = oldNeighbors.front();
-      maxParent = oldNeighbors.back();
-      neighbors = (current.Octant(level)).getAllNeighbours();
-      neighbors.push_back(current.Octant(level));
-      sort(neighbors.begin(), neighbors.end());
-      neighbors.erase(remove(neighbors.begin(), neighbors.end(), rootOct), neighbors.end());
-      lowerBound = lower_bound(allPlanets[i].begin(), allPlanets[i].end(), minParent);
-
-      //cout << *lowerBound << '\t' << (*lowerBound).Octant() << '\t' << minParent << endl;
+      oldNeighbors.push_back(current.Octant(level));
+      sort(oldNeighbors.begin(), oldNeighbors.end());
+      //for(int i = 0; i < neighbors.size(); ++i)
+      //cout << "i: " << i << '\t' << neighbors[i] << endl;
+      oldNeighbors.erase(remove(oldNeighbors.begin(), oldNeighbors.end(), rootOct), oldNeighbors.end());
+      ot::TreeNode minLocalOct = oldNeighbors.front();
+      ot::TreeNode maxLocalOct = oldNeighbors.back();
+      //treeNodesTovtk(oldNeighbors, node_id, "local");
+      //treeNodesTovtk(currOct, node_id, "current");
+      //cout << minLocalOct << '\t' << maxLocalOct << endl;
+      int prevMinIndex = 0;
+      int prevMaxIndex = 0;
+      ot::TreeNode minParent;
+      ot::TreeNode maxParent;
       
-      allItr = lowerBound;
-      localItr = oldNeighbors.begin();
-      auto neiItr = neighbors.begin();
+      auto lowerBound = lower_bound((allPlanets.back()).begin(), (allPlanets.back()).end()-1, minLocalOct);
+      auto upperBound = upper_bound((allPlanets.back()).begin(), (allPlanets.back()).end()-1, maxLocalOct);
       
-      while((*allItr).Octant() < maxParent)//oldNeighbors.back())
+
+      //cout << '\t' << *lowerBound << '\t' << *upperBound << endl;
+      // cout << '\t' << lowerBound - (allPlanets.back()).begin() << '\t' << upperBound - (allPlanets.back()).begin() << endl;
+      minParent = (*(lowerBound - 1)).Octant();
+      maxParent = (*upperBound).Octant();
+      
+      for(auto i = (allPlanets.back()).begin(); i < lowerBound; ++i)
+	accumulate.push_back(*i);
+
+      for(auto i = upperBound; i < (allPlanets.back()).end(); ++i)
+	accumulate.push_back(*i);
+      
+      auto allItr = lowerBound;
+      auto localItr = oldNeighbors.begin();
+      
+      while(allItr != upperBound)
 	{
-	  //cout << allItr - allPlanets[i].begin() << '\t' << allPlanets[i].size() << '\t' << maxParent << endl;
-	  if((*localItr).isAncestor((*allItr).Octant()))
+	  if(*localItr == (*allItr).Octant())
 	    {
-	      // If in the bounds, do a binary search over the neighbors
-	      //    If it is in the neighbors, then ++allItr
-	      //        update the start point of the search to the point it found
-	      //    Else accumulate and ++allItr
-	      // Else accumulate and ++allItr
-	      if((*allItr).Octant() >= neighbors.front() && (*allItr).Octant() <= neighbors.back())
+	      ++localItr;
+	      ++allItr;
+	    }
+	  else
+	    {
+	      accumulate.push_back(*allItr);
+	      ++allItr;
+	    }
+	}
+      /*
+	for(int i = 0; i < accumulate.size(); ++i)
+	upper.push_back(accumulate[i].Octant());
+	
+	
+	treeNodesTovtk(upper, node_id, "1st_level");
+	
+	vector<ot::TreeNode> olderNeighbors = oldNeighbors;
+      */
+      /////////////////////////////////////////////////////////////////
+      //cout << "level " << level << ": " << accumulate.size() << endl;
+      
+      for(int i = allPlanets.size()-2; i >= 0; --i)
+	{
+	  ++level;
+	  minParent = oldNeighbors.front();
+	  maxParent = oldNeighbors.back();
+	  neighbors = (current.Octant(level)).getAllNeighbours();
+	  neighbors.push_back(current.Octant(level));
+	  sort(neighbors.begin(), neighbors.end());
+	  neighbors.erase(remove(neighbors.begin(), neighbors.end(), rootOct), neighbors.end());
+	  lowerBound = lower_bound(allPlanets[i].begin(), allPlanets[i].end()-1, minParent);
+	  
+	  allItr = lowerBound;
+	  localItr = oldNeighbors.begin();
+	  auto neiItr = neighbors.begin();
+	  
+	  while((*allItr).Octant() < maxParent && allItr < allPlanets[i].end()-1)
+	    {							      
+	      if((*localItr).isAncestor((*allItr).Octant()))
 		{
-		  neiItr = lower_bound(neiItr, neighbors.end(), (*allItr).Octant());
-		  if(*neiItr == (*allItr).Octant())
-		    ++allItr;
+		  // If in the bounds, do a binary search over the neighbors
+		  //    If it is in the neighbors, then ++allItr
+		  //        update the start point of the search to the point it found
+		  //    Else accumulate and ++allItr
+		  // Else accumulate and ++allItr
+		  if((*allItr).Octant() >= neighbors.front() && (*allItr).Octant() <= neighbors.back())
+		    {
+		      neiItr = lower_bound(neiItr, neighbors.end()-1, (*allItr).Octant());
+		      if(*neiItr == (*allItr).Octant())
+			++allItr;
+		      else
+			{
+			  accumulate.push_back(*allItr);
+			  if(allItr < allPlanets[i].end()-1)
+			    ++allItr;
+			}
+		    }
 		  else
 		    {
 		      accumulate.push_back(*allItr);
-		      ++allItr;
+		      if(allItr < allPlanets[i].end()-1)
+			++allItr;
 		    }
 		}
 	      else
 		{
-		  accumulate.push_back(*allItr);
-		  ++allItr;
+		  if(localItr < neighbors.end()-1)
+		    ++localItr;
+		  while((*allItr).Octant() < *localItr && allItr < allPlanets[i].end()-1)
+		    {
+		      //if(allItr < allPlanets[i].end()-1)
+			++allItr;
+		    }
 		}
 	    }
-	  else
-	    {
-	      ++localItr;
-	      while((*allItr).Octant() < *localItr)
-		{
-		  //cout << (*allItr).Octant() << '\t' << *localItr << '\t' << allItr - allPlanets[i].begin() << '\t' << allPlanets[i].size() << endl;;
-		  ++allItr;
-		}
-	    }
+	  oldNeighbors = neighbors;
+	  neighbors.clear();
+	  //cout << "level " << level << ": " << accumulate.size() << endl;
 	}
-      oldNeighbors = neighbors;
-      neighbors.clear();
-      cout << "level " << level << ": " << accumulate.size() << endl;
-
+      
+      accumulate.push_back(current);
+      
+      // Do calculation
+      // pop off last one onto new array
     }
 
-  accumulate.push_back(current);
-
-  // Do calculation
-  // pop off last one onto new array
+  end = chrono::system_clock::now();
+  elapsed_seconds = end - start;
+  cout << "Downsweep Time: " << elapsed_seconds.count() << " seconds" << endl;
 
   //lowerBound = lower_bound(accumulate.begin(), accumulate.end(), current);
   //cout << "Same? " << boolalpha << (current == *lowerBound) << endl;
 
+  /*
   upper.clear();
   for(int i = 0; i < accumulate.size(); ++i)
     upper.push_back(accumulate[i].Octant());
   
   treeNodesTovtk(upper, node_id, "all_oct");
-
+  */
   MPI::Finalize();
   return 0;
 }
