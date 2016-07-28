@@ -47,6 +47,7 @@ class Planet
   unsigned int getLevel() const;
   unsigned int getMaxDepth() const;
   unsigned int GetMaxDepth() const;
+  unsigned int GetCount() const;
   unsigned int getX() const;
   unsigned int getY() const;
   unsigned int getZ() const;
@@ -67,8 +68,10 @@ class Planet
   void SetMass(T mass);
   void SetDepth(unsigned int &level);
   void SetMaxDepth(unsigned int &maxDepth);
+  void SetCount(unsigned int &count);
   
  private:
+  unsigned int count;
   unsigned int level;
   unsigned int maxDepth;
   Vector<T> pos;
@@ -97,6 +100,7 @@ Planet<T>::Planet()
   this->jerk_old = zero;
   this->mass = 0;
   this->level = 0;
+  this->count = 0;
 }
 
 template <typename T>
@@ -114,6 +118,7 @@ Planet<T>::Planet(T x, T y, T z, T mass)
   this->jerk_old = zero;
   this->mass = mass;
   this->level = 0;
+  this->count = 0;
 }
 
 template <typename T>
@@ -133,6 +138,7 @@ Planet<T>::Planet(T x, T y, T z, T mass, unsigned int level)
   this->mass = mass;
   this->level = level;
   this->maxDepth = level;
+  this->count = 0;
 }
 
 template <typename T>
@@ -152,6 +158,7 @@ Planet<T>::Planet(T x, T y, T z, T mass, unsigned int level, unsigned int maxDep
   this->mass = mass;
   this->level = level;
   this->maxDepth = maxDepth;
+  this->count = 0;
 }
 
 template <typename T>
@@ -436,6 +443,12 @@ unsigned int Planet<T>::GetMaxDepth() const
 }
 
 template <typename T>
+unsigned int Planet<T>::GetCount() const
+{
+  return this->count;
+}
+
+template <typename T>
 unsigned int Planet<T>::getX() const
 {
 
@@ -549,6 +562,12 @@ template <typename T>
 void Planet<T>::SetMaxDepth(unsigned int &maxDepth)
 {
   this->maxDepth = maxDepth;
+}
+
+template <typename T>
+void Planet<T>::SetCount(unsigned int &count)
+{
+  this->count = count;
 }
 
 #endif

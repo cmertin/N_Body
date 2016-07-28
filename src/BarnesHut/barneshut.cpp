@@ -219,6 +219,29 @@ int main(int argc, char *argv[])
       size = allPlanets[itr+1].size();
       ++itr;
     }while(size > MAX_COARSEN);
+
+  unsigned int belowCount = 0;
+  // Counts the number of octants stored at each level
+  for(int i = allPlanets.size(); i > 0; --i)
+    {
+      int j = i - 1;
+      auto upItr = allPlanets[i].begin();
+      auto downItr = allPlanets[j].begin();
+      while(upItr != allPlanets[i].end())
+	{
+	  if((*upItr).Octant().isAncestor((*downItr).Octant()))
+	    {
+	      ++downItr;
+	      ++belowCount;
+	    }
+	  else
+	    {
+	      (*upItr).SetCount(belowCount);
+	      belowCount = 0;
+	      ++upItr;
+	    }
+	}
+    }
   
   //cout << "Total Levels: " << allPlanets.size() << endl;
 
@@ -228,16 +251,138 @@ int main(int argc, char *argv[])
   elapsed_seconds = end - start;
   cout << "Upsweep Time: " << elapsed_seconds.count() << " seconds" << endl;
 
-
-
   // For the down sweep
+  start = chrono::system_clock::now();
+  vector<Planet<double> > finestLocal;
+  vector<Planet<double> > agglomerate;
+  ot::TreeNode prevParent;
+  ot::TreeNode lowerBound;
+  ot::TreeNode upperBound;
+  auto finestItr = (allPlanets.front()).begin();
+  auto nextFinestItr = (allPlanets.front()).begin();
+  //cout << *finestItr << endl;
+  auto coarsestItr = (allPlanets.back()).begin();
+  level = allPlanets.size() - 2;
+  unsigned int maxCount = 100;
+  unsigned int depth = 100;
+
+  // Finds all the finest in CoursestItr
+  while(((*coarsestItr).Octant()).isAncestor((*finestItr).Octant()))
+    {
+      finestLocal.push_back(*finestItr);
+      ++finestItr;
+    }
+
+  finestItr = finestLocal.begin();
+  auto coarseItr = allPlanets[level].begin();
+  while(((*coarseItr).Octant()).isAncestor((*finestItr).Octant()) == false)
+    {
+      agglomerate.push_back(*coarseItr);
+      ++coarseItr;
+    }
+  //lowerBound = (*(coarseItr - 1)).Octant();
+
+  prevParent = (*coarseItr).Octant();
+  depth = prevParent.getLevel();
+
+  cout << "Count: " << (*coarseItr).GetCount() << '\t' << depth << endl;
+
+
+  while(prevParent.isAncestor((*finestItr).Octant()))
+    ++finestItr;
+
+
+  /*
+  // Need to figure out way to skip...
+  cout << (*coarseItr).GetCount() << endl;
+  coarseItr += (*coarseItr).GetCount();
+  */
+
+  ++coarseItr;
+
+  while((*coarsestItr).Octant().isAncestor((*coarseItr).Octant()))
+    {
+      agglomerate.push_back(*coarseItr);
+      ++coarseItr;
+    }
+
+  --level;
+
+
+  // Do the next level
+
+  coarseItr = allPlanets[level].begin();
+  finestItr = allPlanets.front().begin(); // with the offset that I'm calculating
+
+  while((*coarseItr).Octant().isAncestor((*finestItr).Octant()) == false)
+    {
+      agglomerate.push_back(*coarseItr);
+      ++coarseItr;
+    }
+  
+  coarsestItr = allPlanets[level+1].begin();
+  prevParent = (*coarseItr).Octant();
+
+  while((*coarseItr).Octant().isAncestor((*finestItr).Octant()))
+    ++finestItr;
+
+  ++coarseItr;
+
+  while((*coarsestItr).Octant().isAncestor((*coarseItr).Octant()))
+    {
+      agglomerate.push_back(*coarseItr);
+      ++coarseItr;
+    }
+  
+  
+  
+  //  while((*coarseItr)
+
+
+  vector<ot::TreeNode> finestLocalOct;
+  vector<ot::TreeNode> agglomerateOct;
+
+  for(int i = 0; i < finestLocal.size(); ++i)
+    finestLocalOct.push_back(finestLocal[i].Octant());
+
+  for(int i = 0; i < agglomerate.size(); ++i)
+    agglomerateOct.push_back(agglomerate[i].Octant());
+  
+  treeNodesTovtk(finestLocalOct, node_id, "finest");
+  treeNodesTovtk(agglomerateOct, node_id, "agglomerate");
+  
+  
+  // Moves to the next "block"
+  
+  
+
+  
+  /*
+  vector<ot::TreeNode> coarsest;
+  vector<ot::TreeNode> finest;
+
+  cout << "FinestLocal size: " << finestLocal.size() << endl;
+
+  for(int i = 0; i < finestLocal.size(); ++i)
+    {
+      finest.push_back(finestLocal[i].Octant());
+    }
+  
+  coarsest.push_back((*coarsestItr).Octant());
+  treeNodesTovtk(finest, node_id, "finest");
+  treeNodesTovtk(coarsest, node_id, "coarsest");
+  
+
+
+  cout << *coarsestItr << endl;
+  */
+  /*
   //level = 2;
   unsigned int maxLevel = level;
-  start = chrono::system_clock::now();
-  for(int body = 0; body < allPlanets[0].size(); ++body)
-    {
+  //for(int body = 0; body < allPlanets[0].size(); ++body)
+  //{
       level = maxLevel;
-      Planet<double> current = allPlanets[0][body];
+      Planet<double> current = allPlanets[0][500];
       ot::TreeNode rootOct(0, 0, 0, 0, dim, maxDepth);
       vector<ot::TreeNode> currOct;
       currOct.push_back(current.Octant(maxDepth));
@@ -246,10 +391,6 @@ int main(int argc, char *argv[])
       vector<ot::TreeNode> upper;
       vector<ot::TreeNode> oldNeighbors = (current.Octant(level)).getAllNeighbours();
       vector<ot::TreeNode> neighbors;
-
-
-      //cout << "i = " << body << '\t' << allPlanets[0][body] << '\t' <<current.Octant(maxDepth) << '\t' <<  current.Octant(level) << endl;
-
 
       oldNeighbors.push_back(current.Octant(level));
       sort(oldNeighbors.begin(), oldNeighbors.end());
@@ -268,7 +409,6 @@ int main(int argc, char *argv[])
       
       auto lowerBound = lower_bound((allPlanets.back()).begin(), (allPlanets.back()).end()-1, minLocalOct);
       auto upperBound = upper_bound((allPlanets.back()).begin(), (allPlanets.back()).end()-1, maxLocalOct);
-      
 
       //cout << '\t' << *lowerBound << '\t' << *upperBound << endl;
       // cout << '\t' << lowerBound - (allPlanets.back()).begin() << '\t' << upperBound - (allPlanets.back()).begin() << endl;
@@ -308,7 +448,7 @@ int main(int argc, char *argv[])
       */
       /////////////////////////////////////////////////////////////////
       //cout << "level " << level << ": " << accumulate.size() << endl;
-      
+      /*
       for(int i = allPlanets.size()-2; i >= 0; --i)
 	{
 	  ++level;
@@ -358,8 +498,7 @@ int main(int argc, char *argv[])
 		    ++localItr;
 		  while((*allItr).Octant() < *localItr && allItr < allPlanets[i].end()-1)
 		    {
-		      //if(allItr < allPlanets[i].end()-1)
-			++allItr;
+		      ++allItr;
 		    }
 		}
 	    }
@@ -372,8 +511,8 @@ int main(int argc, char *argv[])
       
       // Do calculation
       // pop off last one onto new array
-    }
-
+      // }
+      */
   end = chrono::system_clock::now();
   elapsed_seconds = end - start;
   cout << "Downsweep Time: " << elapsed_seconds.count() << " seconds" << endl;

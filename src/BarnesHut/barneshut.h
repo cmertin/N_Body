@@ -39,6 +39,7 @@ namespace barneshut
 	  newPlanet.SetMaxDepth(depth);
 	  newPlanet.SetPos(x, y, z);
 	  newPlanet.SetMass(mass);
+	  newPlanet.SetCount(n);
 	  for(unsigned int i = 0; i < n; ++i)
 	    *(planets + i) = newPlanet;
 	}
@@ -76,6 +77,8 @@ namespace barneshut
 	  newPlanet.SetMaxDepth(depth);
 	  newPlanet.SetPos(x, y, z);
 	  newPlanet.SetMass(mass);
+	  //newPlanet.SetCount(n);
+	  //std::cout << "this count: " << newPlanet.GetCount() << std::endl;
 	  for(unsigned int i = 0; i < n; ++i)
 	    *(planets + i) = newPlanet;
 	  
