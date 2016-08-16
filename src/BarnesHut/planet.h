@@ -48,9 +48,11 @@ class Planet
   unsigned int getMaxDepth() const;
   unsigned int GetMaxDepth() const;
   unsigned int GetCount() const;
+  unsigned int GetChildren() const;
   unsigned int getX() const;
   unsigned int getY() const;
   unsigned int getZ() const;
+  unsigned int GetLength() const;
   T GetMass() const;
   ot::TreeNode GetOctant() const;
   ot::TreeNode Octant() const;
@@ -69,9 +71,11 @@ class Planet
   void SetDepth(unsigned int &level);
   void SetMaxDepth(unsigned int &maxDepth);
   void SetCount(unsigned int &count);
+  void SetChildren(unsigned int &numChildren);
   
  private:
   unsigned int count;
+  unsigned int numChildren;
   unsigned int level;
   unsigned int maxDepth;
   Vector<T> pos;
@@ -101,6 +105,7 @@ Planet<T>::Planet()
   this->mass = 0;
   this->level = 0;
   this->count = 0;
+  this->numChildren = 0;
 }
 
 template <typename T>
@@ -119,6 +124,7 @@ Planet<T>::Planet(T x, T y, T z, T mass)
   this->mass = mass;
   this->level = 0;
   this->count = 0;
+  this->numChildren = 0;
 }
 
 template <typename T>
@@ -139,6 +145,7 @@ Planet<T>::Planet(T x, T y, T z, T mass, unsigned int level)
   this->level = level;
   this->maxDepth = level;
   this->count = 0;
+  this->numChildren = 0;
 }
 
 template <typename T>
@@ -159,6 +166,7 @@ Planet<T>::Planet(T x, T y, T z, T mass, unsigned int level, unsigned int maxDep
   this->level = level;
   this->maxDepth = maxDepth;
   this->count = 0;
+  this->numChildren = 0;
 }
 
 template <typename T>
@@ -311,6 +319,10 @@ Planet<T> &Planet<T>::operator=(const Planet<T> &rhs)
   SetDepth(tempInt);
   tempInt = rhs.GetMaxDepth();
   SetMaxDepth(tempInt);
+  tempInt = rhs.GetChildren();
+  SetChildren(tempInt);
+  tempInt = rhs.GetCount();
+  SetCount(tempInt);
 
   return *this;
 }
@@ -449,6 +461,12 @@ unsigned int Planet<T>::GetCount() const
 }
 
 template <typename T>
+unsigned int Planet<T>::GetChildren() const
+{
+  return this->numChildren;
+}
+
+template <typename T>
 unsigned int Planet<T>::getX() const
 {
 
@@ -489,6 +507,13 @@ unsigned int Planet<T>::getZ() const
   */
   ot::TreeNode octant = GetOctant();
   return octant.getAncestor(level).getZ();
+}
+
+template <typename T>
+unsigned int Planet<T>::GetLength() const
+{
+  ot::TreeNode oct = Octant();
+  return oct.maxX() - oct.minX();
 }
 
 template <typename T>
@@ -568,6 +593,12 @@ template <typename T>
 void Planet<T>::SetCount(unsigned int &count)
 {
   this->count = count;
+}
+
+template <typename T>
+void Planet<T>::SetChildren(unsigned int &numChildren)
+{
+  this->numChildren = numChildren;
 }
 
 #endif
