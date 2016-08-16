@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
   unsigned int dim = 3;
   unsigned int maxDepth = 8;
   unsigned int maxNumPts = 1;
-  const int MAX_COARSEN = 10;
+  const int MAX_COARSEN = 64;
   const int MAX_PER_OCT = 1;
   double energyInit = 0;
   double energyFinal = 0;
@@ -208,14 +208,6 @@ int main(int argc, char *argv[])
 	}
     }
 
-  cout << "Max Size: " << allPlanets.back().size() << endl;
-
-  for(auto tempItr = allPlanets.back().begin(); tempItr != allPlanets.back().end(); ++tempItr)
-    {
-      cout << (*tempItr).GetCount() << " " << (*tempItr).GetChildren() << endl;
-    }
-
-
   // For the down sweep
   start = chrono::system_clock::now();
   auto finestItr = allPlanets.front().begin();
@@ -244,7 +236,7 @@ int main(int argc, char *argv[])
   
   //vector<ot::TreeNode> tempOcts;
 
-  //cout << "Coarsest size: " << agglomerate.size() << endl;
+  cout << "Coarsest size: " << agglomerate.size() << endl;
   //for(int i = 0; i < agglomerate.size(); ++i)
   //tempOcts.push_back(agglomerate[i].Octant());
 
@@ -592,18 +584,20 @@ bool InRegion(Planet<T> &current, Planet<T> &search)
   if((int)currPos.GetZ() - (int)length > 0)
     minZ = currPos.GetZ() - length;
   
-  length = (length << 1);
-  //cout << '\t' << length << '\t' << maxInt << endl;
+  //length = (length << 1);
+ 
   unsigned int maxX = min(currPos.GetX() + length, maxInt);
   unsigned int maxY = min(currPos.GetY() + length, maxInt);
   unsigned int maxZ = min(currPos.GetZ() + length, maxInt);
 
-  //cout << minX << " <= " << pos.GetX() << " < " << maxX << endl;
-  //cout << '\t' << boolalpha << (minX <= pos.GetX() && pos.GetX() < maxX) << endl;
-  //cout << minY << " <= " << pos.GetY() << " < " << maxY << endl;
-  //cout << '\t' << boolalpha << (minY <= pos.GetY() && pos.GetY() < maxY) << endl;
-  //cout << minZ << " <= " << pos.GetZ() << " < " << maxZ << endl;
-  //cout << '\t' << boolalpha << (minZ <= pos.GetZ() && pos.GetZ() < maxZ) << endl << endl;
-  
-  return (minX <= pos.GetX() && pos.GetX() < maxX && minY <= pos.GetY() && pos.GetY() < maxY && minZ <= pos.GetZ() && pos.GetZ() < maxZ);
+  /*cout << '\t' << "MaxInt: " << maxInt << endl;
+
+  cout << minX << " <= " << pos.GetX() << " < " <<= maxX << endl;
+  cout << '\t' << boolalpha << (minX <= pos.GetX() && pos.GetX() <= maxX) << endl;
+  cout << minY << " <= " << pos.GetY() << " < " <<= maxY << endl;
+  cout << '\t' << boolalpha << (minY <= pos.GetY() && pos.GetY() <= maxY) << endl;
+  cout << minZ << " <= " << pos.GetZ() << " < " <<= maxZ << endl;
+  cout << '\t' << boolalpha << (minZ <= pos.GetZ() && pos.GetZ() <= maxZ) << endl << endl;
+  */
+  return (minX <= pos.GetX() && pos.GetX() <= maxX && minY <= pos.GetY() && pos.GetY() <= maxY && minZ <= pos.GetZ() && pos.GetZ() <= maxZ);
 }
