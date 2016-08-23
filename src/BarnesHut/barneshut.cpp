@@ -250,7 +250,6 @@ int main(int argc, char *argv[])
   // Does the coarsest part
   for(coarseItr; coarseItr != allPlanets[level].end(); ++coarseItr)
     {
-      //cout << (*coarseItr).Octant() << endl;
       if(InRegion(*finestItr, *coarseItr) == false)
 	agglomerate.push_back(*coarseItr);
       else
@@ -260,14 +259,7 @@ int main(int argc, char *argv[])
 	}
     }
   
-  //vector<ot::TreeNode> tempOcts;
-
   cout << "Coarsest size: " << agglomerate.size() << endl;
-  //for(int i = 0; i < agglomerate.size(); ++i)
-  //tempOcts.push_back(agglomerate[i].Octant());
-
-  //treeNodesTovtk(tempOcts, node_id, "coarsest");
-
   while(level > 0)
     {
       --level;
@@ -298,8 +290,6 @@ int main(int argc, char *argv[])
 
   cout << "Agglomerate: " << agglomerate.size() << endl;
   cout << "Index: " << index.size() << endl;
-
-
 
   vector<ot::TreeNode> accumulatedOcts;
   vector<ot::TreeNode> pointParticle;
@@ -582,10 +572,15 @@ bool operator<(const ot::TreeNode &oct, const Planet<T> &planet)
 template <typename T>
 bool InRegion(Planet<T> &current, Planet<T> &search)
 {
+
+  // Need to compare the minimum of the search to the shifted
+  // compare maxX to search.minX and minX to search.maxX
   static const unsigned int maxInt = (1 << current.GetMaxDepth()) - 1;
   ot::TreeNode tempOct = current.Octant(search.GetDepth() + 1);
   Vector<unsigned int> currPos;
   Vector<unsigned int> pos;
+  Vector<unsigned int> minPos;
+  Vector<unsigned int> maxPos;
   unsigned int length = 0;
 
   currPos.SetX(tempOct.getX());
@@ -597,6 +592,13 @@ bool InRegion(Planet<T> &current, Planet<T> &search)
   pos.SetX(tempOct.getX());
   pos.SetY(tempOct.getY());
   pos.SetZ(tempOct.getZ());
+  minPos.SetX(tempOct.minX());
+  minPos.SetY(tempOct.minY());
+  minPos.SetZ(tempOct.minZ());
+  
+  maxPos.SetX(tempOct.maxX());
+  maxPos.SetY(tempOct.maxY());
+  maxPos.SetZ(tempOct.maxZ());
 
   unsigned int minX = 0u;
   unsigned int minY = 0u;
@@ -616,5 +618,5 @@ bool InRegion(Planet<T> &current, Planet<T> &search)
   unsigned int maxY = min(currPos.GetY() + length, maxInt);
   unsigned int maxZ = min(currPos.GetZ() + length, maxInt);
 
-  return (minX <= pos.GetX() && pos.GetX() < maxX && minY <= pos.GetY() && pos.GetY() < maxY && minZ <= pos.GetZ() && pos.GetZ() < maxZ);
+  return (minX < maxPos.GetX() && minPos.GetX() < maxX && minY < maxPos.GetY() && minPos.GetY() < maxY && minZ < maxPos.GetZ() && minPos.GetZ() < maxZ);
 }
