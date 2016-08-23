@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
   unsigned int dim = 3;
   unsigned int maxDepth = 8;
   unsigned int maxNumPts = 1;
-  const int MAX_COARSEN = 64;
+  const int MAX_COARSEN = (1 << dim);
   const int MAX_PER_OCT = 1;
   double energyInit = 0;
   double energyFinal = 0;
@@ -195,7 +195,8 @@ int main(int argc, char *argv[])
 
   unsigned int indexCount = 0;
   
-  cout << "Size: " << allPlanets.size() << endl;
+  //cout << "Size: " << allPlanets.size() << endl;
+  // Calculates the number of children for each octant
   for(int i = allPlanets.size()-1; i > 0; --i)
     {
       int j = i - 1;
@@ -205,6 +206,31 @@ int main(int argc, char *argv[])
 	{
 	  (*currItr).SetCount(indexCount);
 	  indexCount += (*currItr).GetChildren();
+	}
+    }
+
+  // Implementing the total descendent count via pre-processing
+  // Counts the number of children of each descendent and sums them up
+  unsigned int count = 0;
+  for(int i = 1; i < allPlanets.size(); ++i)
+    {
+      int j = i - 1;
+      count = 0;
+      auto parentBody = allPlanets[i].begin();
+      auto currentBody = allPlanets[j].begin();
+      while(parentBody != allPlanets[i].end())
+	{
+	  if((*parentBody).Octant().isAncestor((*currentBody).Octant()))
+	    {
+	      //count += 1 + (*currentBody).GetChildren();
+	      ++currentBody;
+	    }
+
+	  else
+	    {
+	      count = 0;
+	      ++parentBody;
+	    }
 	}
     }
 
@@ -557,7 +583,7 @@ template <typename T>
 bool InRegion(Planet<T> &current, Planet<T> &search)
 {
   static const unsigned int maxInt = (1 << current.GetMaxDepth()) - 1;
-  ot::TreeNode tempOct = current.Octant(search.GetDepth());
+  ot::TreeNode tempOct = current.Octant(search.GetDepth() + 1);
   Vector<unsigned int> currPos;
   Vector<unsigned int> pos;
   unsigned int length = 0;
@@ -565,13 +591,13 @@ bool InRegion(Planet<T> &current, Planet<T> &search)
   currPos.SetX(tempOct.getX());
   currPos.SetY(tempOct.getY());
   currPos.SetZ(tempOct.getZ());
+  length = tempOct.maxX() - tempOct.minX();
   
   tempOct = search.Octant();
   pos.SetX(tempOct.getX());
   pos.SetY(tempOct.getY());
   pos.SetZ(tempOct.getZ());
 
-  length = tempOct.maxX() - tempOct.minX();
   unsigned int minX = 0u;
   unsigned int minY = 0u;
   unsigned int minZ = 0u;
@@ -584,20 +610,11 @@ bool InRegion(Planet<T> &current, Planet<T> &search)
   if((int)currPos.GetZ() - (int)length > 0)
     minZ = currPos.GetZ() - length;
   
-  //length = (length << 1);
+  length = (length << 1);
  
   unsigned int maxX = min(currPos.GetX() + length, maxInt);
   unsigned int maxY = min(currPos.GetY() + length, maxInt);
   unsigned int maxZ = min(currPos.GetZ() + length, maxInt);
 
-  /*cout << '\t' << "MaxInt: " << maxInt << endl;
-
-  cout << minX << " <= " << pos.GetX() << " < " <<= maxX << endl;
-  cout << '\t' << boolalpha << (minX <= pos.GetX() && pos.GetX() <= maxX) << endl;
-  cout << minY << " <= " << pos.GetY() << " < " <<= maxY << endl;
-  cout << '\t' << boolalpha << (minY <= pos.GetY() && pos.GetY() <= maxY) << endl;
-  cout << minZ << " <= " << pos.GetZ() << " < " <<= maxZ << endl;
-  cout << '\t' << boolalpha << (minZ <= pos.GetZ() && pos.GetZ() <= maxZ) << endl << endl;
-  */
-  return (minX <= pos.GetX() && pos.GetX() <= maxX && minY <= pos.GetY() && pos.GetY() <= maxY && minZ <= pos.GetZ() && pos.GetZ() <= maxZ);
+  return (minX <= pos.GetX() && pos.GetX() < maxX && minY <= pos.GetY() && pos.GetY() < maxY && minZ <= pos.GetZ() && pos.GetZ() < maxZ);
 }
