@@ -197,6 +197,7 @@ int main(int argc, char *argv[])
   
   //cout << "Size: " << allPlanets.size() << endl;
   // Calculates the number of children for each octant
+  start = chrono::system_clock::now();
   for(int i = allPlanets.size()-1; i > 0; --i)
     {
       int j = i - 1;
@@ -209,7 +210,6 @@ int main(int argc, char *argv[])
 	}
     }
 
-  // Implementing the total descendent count via pre-processing
   // Counts the number of children of each descendent and sums them up
   unsigned int count = 0;
   for(int i = 1; i < allPlanets.size(); ++i)
@@ -218,21 +218,47 @@ int main(int argc, char *argv[])
       count = 0;
       auto parentBody = allPlanets[i].begin();
       auto currentBody = allPlanets[j].begin();
-      while(parentBody != allPlanets[i].end())
-	{
-	  if((*parentBody).Octant().isAncestor((*currentBody).Octant()))
-	    {
-	      //count += 1 + (*currentBody).GetChildren();
-	      ++currentBody;
-	    }
 
-	  else
+      if(i == 1)
+	{
+	  while(parentBody != allPlanets[i].end())
 	    {
-	      count = 0;
+	      count = (*parentBody).GetChildren();
+	      (*parentBody).SetTotalDescendents(count);
 	      ++parentBody;
 	    }
 	}
+      else
+	{
+	  while(parentBody != allPlanets[i].end())
+	    {
+	      if((*parentBody).Octant().isAncestor((*currentBody).Octant()))
+		{
+		  count += (*currentBody).GetTotalDescendents();
+		  ++currentBody;
+		}
+	      else
+		{
+		  count += (*parentBody).GetChildren();
+		  (*parentBody).SetTotalDescendents(count);
+		  count = 0;
+		  ++parentBody;
+		}
+	    }
+	}
     }
+
+  end = chrono::system_clock::now();
+  elapsed_seconds = end - start;
+  cout << "Preprocessing Time: " << elapsed_seconds.count() << " seconds" << endl;
+  /*
+  int jTemp = 1;
+  for(int i = allPlanets.size()-1; i > 0; --i)
+    {
+      cout << "Total descendents at level " << jTemp++ << " = " << allPlanets[i].front().GetTotalDescendents() << '\t' << allPlanets[i].front().GetChildren() << endl;
+    }
+  */
+
 
   // For the down sweep
   start = chrono::system_clock::now();
@@ -259,7 +285,7 @@ int main(int argc, char *argv[])
 	}
     }
   
-  cout << "Coarsest size: " << agglomerate.size() << endl;
+  //cout << "Coarsest size: " << agglomerate.size() << endl;
   while(level > 0)
     {
       --level;
@@ -572,13 +598,10 @@ bool operator<(const ot::TreeNode &oct, const Planet<T> &planet)
 template <typename T>
 bool InRegion(Planet<T> &current, Planet<T> &search)
 {
-
-  // Need to compare the minimum of the search to the shifted
-  // compare maxX to search.minX and minX to search.maxX
+  // Compare maxX to search.minX and minX to search.maxX
   static const unsigned int maxInt = (1 << current.GetMaxDepth()) - 1;
   ot::TreeNode tempOct = current.Octant(search.GetDepth() + 1);
   Vector<unsigned int> currPos;
-  Vector<unsigned int> pos;
   Vector<unsigned int> minPos;
   Vector<unsigned int> maxPos;
   unsigned int length = 0;
@@ -589,9 +612,6 @@ bool InRegion(Planet<T> &current, Planet<T> &search)
   length = tempOct.maxX() - tempOct.minX();
   
   tempOct = search.Octant();
-  pos.SetX(tempOct.getX());
-  pos.SetY(tempOct.getY());
-  pos.SetZ(tempOct.getZ());
   minPos.SetX(tempOct.minX());
   minPos.SetY(tempOct.minY());
   minPos.SetZ(tempOct.minZ());

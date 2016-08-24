@@ -53,6 +53,7 @@ class Planet
   unsigned int getY() const;
   unsigned int getZ() const;
   unsigned int GetLength() const;
+  unsigned int GetTotalDescendents() const;
   T GetMass() const;
   ot::TreeNode GetOctant() const;
   ot::TreeNode Octant() const;
@@ -72,8 +73,10 @@ class Planet
   void SetMaxDepth(unsigned int &maxDepth);
   void SetCount(unsigned int &count);
   void SetChildren(unsigned int &numChildren);
+  void SetTotalDescendents(unsigned int &totalDescendents);
   
  private:
+  unsigned int totalDescendents;
   unsigned int count;
   unsigned int numChildren;
   unsigned int level;
@@ -517,6 +520,12 @@ unsigned int Planet<T>::GetLength() const
 }
 
 template <typename T>
+unsigned int Planet<T>::GetTotalDescendents() const
+{
+  return this->totalDescendents;
+}
+
+template <typename T>
 void Planet<T>::SetPos(Vector<T> &rhs)
 {
   this->pos = rhs;
@@ -599,6 +608,12 @@ template <typename T>
 void Planet<T>::SetChildren(unsigned int &numChildren)
 {
   this->numChildren = numChildren;
+}
+
+template <typename T>
+void Planet<T>::SetTotalDescendents(unsigned int &totalDescendents)
+{
+  this->totalDescendents = totalDescendents;
 }
 
 #endif
